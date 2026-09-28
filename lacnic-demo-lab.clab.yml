@@ -1,0 +1,206 @@
+name: lacnic-lab01
+prefix: ""
+
+topology:
+  kinds:
+    nokia_srsim:
+      image: localhost/nokia/srsim:25.10.R4 # Get the image with Nokia representative
+      license: ../license/license.txt       # Get the license with Nokia representative
+    
+    linux:
+      image: ghcr.io/srl-labs/network-multitool
+      
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux:26.7.2 # external image
+    
+    
+  nodes:
+    rtr1-sr-1:
+      kind: nokia_srsim
+      type: sr-1
+      group: router
+      mgmt-ipv4: 172.20.20.11
+      startup-config: ./configs/rtr1-sr-1/rtr1-sr-1.partial.txt
+      labels:
+        graph-level: 1
+        graph-icon: router
+        
+    rtr2-srl:
+      kind: nokia_srlinux
+      type: ixr-d3l
+      group: router
+      mgmt-ipv4: 172.20.20.12
+      startup-config: ./configs/rtr2-srl/rtr2-srl.cli
+      labels:
+        graph-level: 1
+        graph-icon: router
+        
+    rtr3-sr-1:
+      kind: nokia_srsim
+      type: sr-1
+      group: router
+      mgmt-ipv4: 172.20.20.13
+      startup-config: ./configs/rtr3-sr-1/rtr3-sr-1.partial.txt
+      labels:
+        graph-level: 2
+        graph-icon: router
+    
+    rtr4-sr-1:
+      kind: nokia_srsim
+      type: sr-1
+      group: router
+      mgmt-ipv4: 172.20.20.14
+      startup-config: ./configs/rtr4-sr-1/rtr4-sr-1.partial.txt
+      labels:
+        graph-level: 2
+        graph-icon: router
+    
+    
+    
+    peer1-sr-1:
+      kind: nokia_srsim
+      type: sr-1
+      group: router
+      mgmt-ipv4: 172.20.20.21
+      startup-config: ./configs/peer1-sr-1/peer1-sr-1.partial.txt
+      labels:
+        graph-level: 3
+        graph-icon: router
+    
+    peer2-sr-1:
+      kind: nokia_srsim
+      type: sr-1
+      group: router
+      mgmt-ipv4: 172.20.20.22
+      startup-config: ./configs/peer2-sr-1/peer2-sr-1.partial.txt
+      labels:
+        graph-level: 3
+        graph-icon: router
+
+    
+    rs1: # route server # BIRD: docker exec -it rs1 birdc -> show protocols -> show protocols all
+      kind: linux
+      image: ghcr.io/srl-labs/bird:2.13
+      labels:
+        graph-level: 1
+        graph-icon: host
+      binds:
+        - configs/rs1/bird.conf:/etc/bird.conf
+      exec:
+        - ip link set dev eth1 address 02:42:ac:00:23:13
+        - ip link set mtu 1500 dev eth1
+        - ip address add dev eth1 192.168.10.13/24
+    
+    # Clients   
+    client1:
+      kind: linux
+      group: linux-hosts
+      binds:
+        - configs/client1:/config
+      labels:
+        graph-level: 1
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:23:01
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 192.168.10.1/24 dev eth1
+        - iperf3 -sD
+        
+    client2:
+      kind: linux
+      group: linux-hosts
+      binds:
+        - configs/client2:/config
+      labels:
+        graph-level: 1
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:23:02
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 192.168.10.2/24 dev eth1
+        - iperf3 -sD
+    
+    client3:
+      kind: linux
+      group: linux-hosts
+      binds:
+        - configs/client3:/config
+      labels:
+        graph-level: 2
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:23:03
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 192.168.10.3/24 dev eth1
+        - iperf3 -sD
+        
+    client4:
+      kind: linux
+      group: linux-hosts
+      binds:
+        - configs/client4:/config
+      labels:
+        graph-level: 2
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:23:04
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 192.168.10.4/24 dev eth1
+        - iperf3 -sD
+    
+    clientpeer1:
+      kind: linux
+      group: linux-hosts
+      labels:
+        graph-level: 3
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:25:01
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 101.11.11.2/24 dev eth1
+        - ip route add default via 101.11.11.1
+        - iperf3 -sD
+        
+        
+    clientpeer2:
+      kind: linux
+      group: linux-hosts
+      labels:
+        graph-level: 3
+        graph-icon: host
+      exec:
+        - ip link set dev eth0 down
+        - ip link set dev eth1 address 02:42:ac:00:23:04
+        - ip link set mtu 1500 dev eth1
+        - ip addr add 201.21.21.2/24 dev eth1
+        - ip route add default via 201.21.21.1
+        - iperf3 -sD
+    
+  links:
+    - endpoints: ["rtr1-sr-1:1/1/c1/1","rtr2-srl:e1-1"]
+    - endpoints: ["rtr1-sr-1:1/1/c2/1","rtr3-sr-1:1/1/c1/1"]
+    - endpoints: ["rtr1-sr-1:1/1/c3/1","rtr4-sr-1:1/1/c1/1"]
+    
+    - endpoints: ["rtr2-srl:e1-2","rtr3-sr-1:1/1/c2/1"]
+    - endpoints: ["rtr2-srl:e1-3","rtr4-sr-1:1/1/c2/1"]
+    
+    - endpoints: ["rtr3-sr-1:1/1/c3/1","rtr4-sr-1:1/1/c3/1"]
+    
+    - endpoints: ["client1:eth1","rtr1-sr-1:1/1/c4/1"]
+    - endpoints: ["client2:eth1","rtr2-srl:e1-4"]
+    - endpoints: ["client3:eth1","rtr3-sr-1:1/1/c4/1"]
+    - endpoints: ["client4:eth1","rtr4-sr-1:1/1/c4/1"]
+    
+    - endpoints: ["peer1-sr-1:1/1/c1/1","rtr4-sr-1:1/1/c5/1"]
+    - endpoints: ["peer1-sr-1:1/1/c2/1","clientpeer1:eth1"]
+    
+    - endpoints: ["peer2-sr-1:1/1/c1/1","rtr3-sr-1:1/1/c5/1"]
+    - endpoints: ["peer2-sr-1:1/1/c2/1","clientpeer2:eth1"]
+    
+    - endpoints: ["rs1:eth1","rtr2-srl:e1-5"]
+    

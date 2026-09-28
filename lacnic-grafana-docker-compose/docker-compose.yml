@@ -1,0 +1,54 @@
+services:
+  gnmic:
+    image: ghcr.io/openconfig/gnmic
+    container_name: gnmic
+    ports:
+      - "9273:9273"
+    volumes:
+      - ./gnmic.yml:/app/gnmic.yml:ro
+    command: ["--config", "/app/gnmic.yml", "subscribe"]
+    networks:
+      - clab
+      
+  prometheus:
+    image: quay.io/prometheus/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - clab
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      #- ./grafanadatasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
+    environment:
+      # - GF_SECURITY_ADMIN_USER=admin
+      # - GF_SECURITY_ADMIN_PASSWORD=admin
+        - GF_ORG_ROLE= "Admin"
+        - GF_ORG_NAME= "Main Org"
+        - GF_AUTH_ANONYMOUS_ENABLED= "true"
+        - GF_AUTH_ANONYMOUS_ORG_ROLE= Admin
+        - GF_AUTH_ANONYMOUS= "true"
+        - GF_AUTH_OAUTH_AUTO_LOGIN= "true"
+        - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+        - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel,knightss27-weathermap-panel
+    networks:
+      - clab
+      
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  clab:
+

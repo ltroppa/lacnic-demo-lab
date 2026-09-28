@@ -1,0 +1,48 @@
+    /configure policy-options policy-statement "export-ixp" entry 10 from protocol name [direct]
+    /configure policy-options policy-statement "export-ixp" entry 10 action action-type accept
+    /configure policy-options policy-statement "from-as-64502" entry 10 action action-type accept
+	/configure port 1/1/c1 admin-state enable
+    /configure port 1/1/c1 connector breakout c1-100g
+    /configure port 1/1/c1/1 admin-state enable
+    /configure port 1/1/c1/1 ethernet mtu 1514
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge notification true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge port-id-subtype tx-if-name
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge receive true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge transmit true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-tlvs port-desc true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-tlvs sys-name true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-tlvs sys-desc true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-tlvs sys-cap true
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-mgmt-address oob admin-state enable
+    /configure port 1/1/c1/1 ethernet lldp dest-mac nearest-bridge tx-mgmt-address system admin-state enable
+    /configure port 1/1/c2 admin-state enable
+    /configure port 1/1/c2 connector breakout c1-100g
+    /configure port 1/1/c2/1 admin-state enable
+    /configure port 1/1/c2/1 ethernet mtu 1514
+    /configure router "Base" autonomous-system 64501
+    /configure router "Base" router-id 100.0.0.1
+    /configure router "Base" interface "system" ipv4 primary address 100.0.0.1
+    /configure router "Base" interface "system" ipv4 primary prefix-length 32
+    /configure router "Base" interface "toIXP" admin-state enable
+    /configure router "Base" interface "toIXP" port 1/1/c1/1
+    /configure router "Base" interface "toIXP" ipv4 primary address 192.168.10.11
+    /configure router "Base" interface "toIXP" ipv4 primary prefix-length 24
+    /configure router "Base" interface "to_clientpeer1" port 1/1/c2/1
+    /configure router "Base" interface "to_clientpeer1" ipv4 primary address 101.11.11.1
+    /configure router "Base" interface "to_clientpeer1" ipv4 primary prefix-length 24
+    /configure router "Base" bgp admin-state enable
+    /configure router "Base" bgp keepalive 5
+    /configure router "Base" bgp min-route-advertisement 1
+    /configure router "Base" bgp rapid-withdrawal true
+    /configure router "Base" bgp hold-time seconds 15
+    /configure router "Base" bgp rapid-update ipv4 true
+    /configure router "Base" bgp group "IXP-RS" type external
+    /configure router "Base" bgp group "IXP-RS" peer-as 64503
+    /configure router "Base" bgp group "IXP-RS" family ipv4 true
+    /configure router "Base" bgp group "IXP-RS" import policy ["from-as-64502"]
+    /configure router "Base" bgp group "IXP-RS" export policy ["export-ixp"]
+    /configure router "Base" bgp neighbor "192.168.10.13" admin-state enable
+    /configure router "Base" bgp neighbor "192.168.10.13" group "IXP-RS"
+    /configure router "Base" bgp neighbor "192.168.10.13" local-address 192.168.10.11
+    /configure system login-control idle-timeout none
+	

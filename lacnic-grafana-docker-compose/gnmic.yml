@@ -1,0 +1,172 @@
+# Test with: gnmic --config gnmic.yml subscribe
+# Then, go to web browser: http://localhost:9273/metrics
+
+# Test with only one path:
+# gnmic -a rtr2-srl --skip-verify -u admin -p NokiaSrl1! -e json_ietf get --path /platform/control[slot=*]/cpu[index=all]/total
+# gnmic -a rtr1-sr-1 -u admin -p NokiaSros1! --insecure get --path /state/system/oper-name
+
+
+targets:
+  rtr1-sr-1:
+    username: "admin"
+    password: "NokiaSros1!"
+    insecure: true
+    address: 172.20.20.11
+    
+  rtr2-srl:
+    skip-verify: true
+    username: "admin"
+    password: "NokiaSrl1!"
+    #insecure: true
+    address: 172.20.20.12
+
+    
+  rtr3-sr-1:
+    username: "admin"
+    password: "NokiaSros1!"
+    insecure: true
+    address: 172.20.20.13
+    
+  rtr4-sr-1:
+    username: "admin"
+    password: "NokiaSros1!"
+    insecure: true
+    address: 172.20.20.14
+    
+  peer1-sr-1:
+    username: "admin"
+    password: "NokiaSros1!"
+    insecure: true
+    address: 172.20.20.21
+    
+subscriptions:
+  port_stats:
+    paths:
+      - "/state/port[port-id=*]/statistics"
+      - "/state/port[port-id=*]/ethernet/statistics"
+      - "/state/port[port-id=*]/ethernet/oper-speed"
+      
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+    
+  # port_vlan-qos_stats:
+    # paths:
+      # - "/state/port[port-id=*]/vlan-qos/statistics/vlan-qos-policy[policy-name=*]"
+    # stream-mode: sample
+    # sample-interval: 5s
+    # encoding: proto
+    
+  cpu_stats:
+    paths:
+      - "/state/system/cpu[sample-period=1]/summary/usage/cpu-usage"
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+    
+  mem_stats:
+    paths:
+      - "/state/system/memory-pools/summary/*"
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+  
+  bgp_stats:
+    paths:
+      - "state/router[router-name=Base]/bgp/neighbor[ip-address=*]/statistics/family-prefix"
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+  
+  fdb_stats:
+    paths:
+      #- state/service/vpls[service-name=EVPN-VPLS-10]/fdb/statistics
+      - state/service/vpls[service-name=EVPN-VPLS-10]/fdb/mac[address=*]/address
+      #- state/service/vpls[service-name=EVPN-VPLS-10]/fdb
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+  
+  evpn_mac_stats:
+    paths:
+      #- state/service/vpls[service-name=EVPN-VPLS-10]/fdb/statistics
+      #- state/service/vpls[service-name=EVPN-VPLS-10]/fdb/mac[address=*]
+      - state/service/vpls[service-name=EVPN-VPLS-10]/fdb
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+  
+  evpn_sap_7750_stats:
+    paths:
+      - "state/service/vpls[service-name=EVPN-VPLS-10]/sap[sap-id=*]"
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: proto
+  
+  srl-if-stats:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: json_ietf
+    paths:
+      - /interface[name=ethernet-1/*]/oper-state
+      - /interface[name=ethernet-1/*]/statistics
+      - /interface[name=ethernet-1/*]/traffic-rate
+  srl-routes:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: json_ietf
+    paths:
+      - /network-instance[name=*]/route-table/ipv4-unicast/statistics/
+      - /network-instance[name=*]/route-table/ipv6-unicast/statistics/
+  srl-bgp:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    encoding: json_ietf
+    paths:
+      - /network-instance[name=*]/protocols/bgp/statistics
+
+
+subscriptions-group:
+  group1:
+    targets:
+      - rtr1-sr-1
+      - rtr3-sr-1
+      - rtr4-sr-1
+      - peer1-sr-1
+
+    subscriptions:
+      - port_stats
+      - port_vlan-qos_stats
+      - cpu_stats
+      - mem_stats
+      - bgp_stats
+      - fdb_stats
+      - evpn_mac_stats
+      - evpn_sap_7750_stats
+
+    outputs:
+      - prom
+
+  group2:
+    targets:
+      - rtr2-srl
+    subscriptions:
+      - srl-if-stats
+      - srl-routes
+      - srl-bgp
+    outputs:
+      - prom
+
+
+outputs:
+  prom:
+    type: prometheus
+    listen: :9273 
+    path: /metrics
+    metric-prefix: gnmic
+    append-subscription-name: true
+    export-timestamps: true
+    debug: true
