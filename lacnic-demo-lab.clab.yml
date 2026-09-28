@@ -5,7 +5,7 @@ topology:
   kinds:
     nokia_srsim:
       image: localhost/nokia/srsim:25.10.R4 # Get the image with Nokia representative
-      license: ../license/license.txt       # Get the license with Nokia representative
+      license: ~/license/license.txt       # Get the license with Nokia representative
     
     linux:
       image: ghcr.io/srl-labs/network-multitool
